@@ -127,7 +127,7 @@ public class Meteor {
 			}
 
 			@Override
-			public void onClose(int i, String s, boolean b) {
+			public void onClose(int code, String reason, boolean b) {
 				log(TAG);
 				log("  onClose");
 				log("    code == "+code);
@@ -194,7 +194,7 @@ public class Meteor {
 	 */
 	private void openConnection(final boolean isReconnect) {
 		if (isReconnect) {
-			if (mConnection.isConnected()) {
+			if (mConnection.isOpen()) {
 				connect(mSessionID);
 				return;
 			}
