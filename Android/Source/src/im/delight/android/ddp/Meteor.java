@@ -17,13 +17,21 @@ package im.delight.android.ddp;
  */
 
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.content.Context;
 
 import java.lang.Exception;
 import java.lang.Override;
 import java.lang.String;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+
 import java.util.Queue;
 import java.util.Iterator;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -32,6 +40,7 @@ import java.util.Arrays;
 import java.io.IOException;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.JsonNode;
+import org.java_websocket.client.DefaultSSLWebSocketClientFactory;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -51,7 +60,7 @@ public class Meteor {
 
 	/** The WebSocket connection that will be used for the data transfer
 	 *  AND
-	 *  The callback that handles messages and events received from the WebSocket connection */
+	 *  The callback that handles messages and events received from the WebSocket connection
 	 */
 	private final WebSocketClient mConnection;
 
@@ -79,8 +88,9 @@ public class Meteor {
 	 *
 	 * @param context a `Context` reference (e.g. an `Activity` or `Service` instance)
 	 * @param serverUri the server URI to connect to
+	 * @throws URISyntaxException 
 	 */
-	public Meteor(final Context context, final String serverUri) {
+	public Meteor(final Context context, final String serverUri) throws URISyntaxException {
 		this(context, serverUri, SUPPORTED_DDP_VERSIONS[0]);
 	}
 
@@ -92,8 +102,9 @@ public class Meteor {
 	 * @param context a `Context` reference (e.g. an `Activity` or `Service` instance)
 	 * @param serverUri the server URI to connect to
 	 * @param protocolVersion the desired DDP protocol version
+	 * @throws URISyntaxException 
 	 */
-	public Meteor(final Context context, final String serverUri, final String protocolVersion) {
+	public Meteor(final Context context, final String serverUri, final String protocolVersion) throws URISyntaxException {
 		if (!isVersionSupported(protocolVersion)) {
 			throw new RuntimeException("DDP protocol version not supported: "+protocolVersion);
 		}
@@ -115,7 +126,7 @@ public class Meteor {
 
 				mConnected = true;
 				mReconnectAttempts = 0;
-				connect(mSessionID);
+				Meteor.this.connect(mSessionID);
 			}
 
 			@Override
@@ -156,6 +167,24 @@ public class Meteor {
 				Log.e(TAG, e.getMessage(), e);
 			}
 		};
+		
+
+		SSLContext sslContext = null;
+		try {
+			sslContext = SSLContext.getInstance( "TLS" );
+			sslContext.init( null, null, null ); // will use java's default key and trust store which is sufficient unless you deal with self-signed certificates
+
+			DefaultSSLWebSocketClientFactory factory = new DefaultSSLWebSocketClientFactory(sslContext);
+			
+			// FIXME: setSocket is not defined for WebSocketClient ...
+			mConnection.setWebSocketFactory( factory );
+
+		} catch (NoSuchAlgorithmException e1) {
+			Log.e(TAG,  e1.getMessage(), e1);
+		} catch (KeyManagementException e1) {
+			Log.e(TAG,  e1.getMessage(), e1);
+		}
+
 
 		// create a map that holds the pending Listener instances
 		mListeners = new HashMap<String, Listener>();
@@ -194,7 +223,7 @@ public class Meteor {
 	 */
 	private void openConnection(final boolean isReconnect) {
 		if (isReconnect) {
-			if (mConnection.isOpen()) {
+			if (mConnection.getConnection().isOpen()) {
 				connect(mSessionID);
 				return;
 			}
