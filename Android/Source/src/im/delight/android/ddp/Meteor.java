@@ -203,7 +203,7 @@ public class Meteor {
 		try {
 			mConnection.connect();
 		}
-		catch (WebSocketException e) {
+		catch (IllegalStateException e) {
 			if (mCallback != null) {
 				mCallback.onException(e);
 			}
