@@ -17,6 +17,7 @@ package im.delight.android.ddp;
  */
 
 import java.util.List;
+import java.net.URISyntaxException;
 import java.util.LinkedList;
 import android.content.Context;
 import im.delight.android.ddp.MeteorCallback;
@@ -29,11 +30,11 @@ public class MeteorSingleton extends Meteor implements MeteorCallback {
 	private static MeteorSingleton mInstance;
 	private final List<MeteorCallback> mCallbacks = new LinkedList<MeteorCallback>();
 
-	public synchronized static MeteorSingleton createInstance(final Context context, final String serverUri) {
+	public synchronized static MeteorSingleton createInstance(final Context context, final String serverUri) throws URISyntaxException {
 		return createInstance(context, serverUri, null);
 	}
 
-	public synchronized static MeteorSingleton createInstance(final Context context, final String serverUri, final String protocolVersion) {
+	public synchronized static MeteorSingleton createInstance(final Context context, final String serverUri, final String protocolVersion) throws URISyntaxException {
 		if (mInstance != null) {
 			throw new RuntimeException("An instance has already been created");
 		}
@@ -75,11 +76,11 @@ public class MeteorSingleton extends Meteor implements MeteorCallback {
 		}
 	}
 
-	private MeteorSingleton(final Context context, final String serverUri) {
+	private MeteorSingleton(final Context context, final String serverUri) throws URISyntaxException {
 		super(context, serverUri);
 	}
 
-	private MeteorSingleton(final Context context, final String serverUri, final String protocolVersion) {
+	private MeteorSingleton(final Context context, final String serverUri, final String protocolVersion) throws URISyntaxException {
 		super(context, serverUri, protocolVersion);
 	}
 
